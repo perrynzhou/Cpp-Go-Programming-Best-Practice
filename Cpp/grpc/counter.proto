@@ -1,0 +1,15 @@
+syntax = "proto3";
+package counter;
+ 
+service CounterService {
+  rpc GetCounter (CounterRequest) returns (CounterReply) {}
+}
+ 
+message CounterRequest {
+  string key = 1;
+}
+ 
+message CounterReply {
+  string message = 1;
+  int64  value = 2;
+}
