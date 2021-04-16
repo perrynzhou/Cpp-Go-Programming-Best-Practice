@@ -4,6 +4,7 @@
 #include <iostream>
 #include <thread>
 #include <vector>
+#include <condition_variable>
 class CallOnce
 {
 public:
@@ -20,30 +21,63 @@ public:
         }
         threads_.clear();
     }
-    
+
     void Do()
     {
-        std::cout << "current thread:" <<pthread_self()<< std::endl;
-        std::call_once(flag_, []() { std::cout <<pthread_self()<< ":CallOnce Just Do Once"<<std::endl; });
+        pthread_t self = pthread_self();
+      //  std::cout << "current thread:" << self << std::endl;
+       // std::unique_lock<std::mutex> lock(mutex_);
+
+     //   std::call_once(flag_, []() { std::cout << pthread_self() << ":CallOnce Just Do Once" << std::endl; });
+        while (true)
+        {
+            std::unique_lock<std::mutex> lock(mutex_);
+            std::cout << "worker thread:"<<self<<" wating" << std::endl;
+            cv_.wait(lock, [this] { return ready_; });
+
+           // cv_.wait(lock,ready_);
+            std::cout << "worker thread:"<<self<<" working" << std::endl;
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+            lock.unlock();
+            cv_.notify_one();
+        }
     }
-    
+
     void Run()
     {
+        pthread_t self = pthread_self();
         for (int i = 0; i < thread_count_; i++)
         {
             threads_.push_back(new std::thread(&CallOnce::Do, this));
+        }
+        std::cout<<" main thread create "<<thread_count_<<std::endl;
+        int count =0;
+        while (true)
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+            std::cout << "main thread:" << self << " data "<<count<<" finish" << std::endl;
+            ready_ = true;
+            cv_.notify_all();
+                        count++;
+
         }
     }
 
 private:
     int thread_count_;
     std::once_flag flag_;
+    std::mutex mutex_;
+    std::condition_variable cv_;
     std::vector<std::thread *> threads_;
+    bool ready_ = false;
+    bool processed_ = false;
 };
 
 int main()
 {
     CallOnce once(4);
-    once.Run();
+    std::thread main(&CallOnce::Run, &once);
+    main.join();
     return 0;
 }
