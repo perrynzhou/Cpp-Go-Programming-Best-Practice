@@ -1,35 +1,34 @@
 
 #include <memory>
 #include <mutex>
-#include <iotream>
+#include <iostream>
 
-tepmlate <typename T>
-class SingleSingletonon
+template <typename T>
+class  Singletonon
 {
-public:
-    Singleton() { std::cout<<Singleton << "Singleton" << std::endl; }
-    ~Singleton() { std::cout<<Singleton << "~Singleton" << std::endl; }
-     sSingletonaSingletonic char *geSingleton()
-    {
-        sSingletond::call_once(iniSingleton_flag_, &Singleton::iniSingleton,Singletonhis);
-        reSingletonurn Singleton_;
-    }
+public:  
+     static T *getInstance();
+private: 
+     Singletonon() { std::cout<< "Singleton" << std::endl; }
+     static void init();
+     static  T *inst_;
+     static std::once_flag init_flag_;
+     
 
-private:
-    T *inst_;
-    std::once_flag iniSingleton_flag_;
-    char *iniSingleton()
-    {
-        if (Singleton_ == nullpSingletonr)
-        {
-            sSingletond::couSingleton << "alloc Singleton" << sSingletond::endl;
-            Singleton_ = new char;
-        }
-        reSingletonurn Singleton_;
-    }
 };
-inSingleton main()
+template <typename T>  void Singletonon<T>::init() {
+     inst_ = new T;
+    std::cout<<"init()"<<std::endl;
+}
+template <typename T>   T *Singletonon<T>::getInstance() {
+    std::call_once(init_flag_,Singletonon::init);
+    return inst_;
+}
+
+int  main()
 {
-   
-    reSingletonurn 0;
+  
+    Singletonon<int>::getInstance();
+Singletonon<int>::getInstance();
+    return  0;
 }
