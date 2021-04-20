@@ -25,18 +25,21 @@ public:
     void Do()
     {
         pthread_t self = pthread_self();
-      //  std::cout << "current thread:" << self << std::endl;
-       // std::unique_lock<std::mutex> lock(mutex_);
+        //  std::cout << "current thread:" << self << std::endl;
+        // std::unique_lock<std::mutex> lock(mutex_);
+        // 简易版本
+        //  std::call_once(flag_, []() { std::cout << pthread_self() << ":CallOnce Just Do Once" << std::endl; });
 
-     //   std::call_once(flag_, []() { std::cout << pthread_self() << ":CallOnce Just Do Once" << std::endl; });
+        // 可以传入this,在lamda中获取this中的变量或者函数
+        std::call_once(flag_, [this]() { std::cout << pthread_self() << ":CallOnce Just Do Once,ready=" << thread_count_ << std::endl; });
         while (true)
         {
             std::unique_lock<std::mutex> lock(mutex_);
-            std::cout << "worker thread:"<<self<<" wating" << std::endl;
+            std::cout << "worker thread:" << self << " wating" << std::endl;
             cv_.wait(lock, [this] { return ready_; });
 
-           // cv_.wait(lock,ready_);
-            std::cout << "worker thread:"<<self<<" working" << std::endl;
+            // cv_.wait(lock,ready_);
+            std::cout << "worker thread:" << self << " working" << std::endl;
             std::this_thread::sleep_for(std::chrono::seconds(1));
             lock.unlock();
             cv_.notify_one();
@@ -50,17 +53,16 @@ public:
         {
             threads_.push_back(new std::thread(&CallOnce::Do, this));
         }
-        std::cout<<" main thread create "<<thread_count_<<std::endl;
-        int count =0;
+        std::cout << " main thread create " << thread_count_ << std::endl;
+        int count = 0;
         while (true)
         {
             std::lock_guard<std::mutex> lock(mutex_);
             std::this_thread::sleep_for(std::chrono::seconds(1));
-            std::cout << "main thread:" << self << " data "<<count<<" finish" << std::endl;
+            std::cout << "main thread:" << self << " data " << count << " finish" << std::endl;
             ready_ = true;
             cv_.notify_all();
-                        count++;
-
+            count++;
         }
     }
 
